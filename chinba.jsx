@@ -3,6 +3,7 @@ import React, { useState, useCallback } from 'react';
 // 친바 - 시간 조율 서비스 UI/UX 디자인
 const ChinbaApp = () => {
     const [isSidebarOpen, setSidebarOpen] = useState(true);
+
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [selectedDays, setSelectedDays] = useState(['월', '화', '수']);
     const [selectedTimeSlots, setSelectedTimeSlots] = useState(new Set());
