@@ -13,6 +13,8 @@ interface TimeTableProps {
   heatmap: HeatmapSlot[];
   totalParticipants: number;
   hoveredMember: string | null;
+  disabled?: boolean;
+  showHeatmap?: boolean;
   onSelectedDaysChange: (days: DayOfWeek[]) => void;
   onSelectedSlotsChange: (slots: Set<string>) => void;
 }
@@ -25,6 +27,8 @@ export default function TimeTable({
   heatmap,
   totalParticipants,
   hoveredMember,
+  disabled = false,
+  showHeatmap = true,
   onSelectedDaysChange,
   onSelectedSlotsChange,
 }: TimeTableProps) {
@@ -81,6 +85,8 @@ export default function TimeTable({
         heatmap={heatmap}
         totalParticipants={totalParticipants}
         hoveredMember={hoveredMember}
+        disabled={disabled}
+        showHeatmap={showHeatmap}
         onMouseDown={handleMouseDown}
         onMouseEnter={handleMouseEnter}
         onMouseUp={handleMouseUp}

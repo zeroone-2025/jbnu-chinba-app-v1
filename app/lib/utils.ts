@@ -129,21 +129,23 @@ export function calculateFreeTime(
 }
 
 /**
- * 히트맵 색상 계산
- * @param count 해당 시간에 가능한 사람 수
+ * 히트맵 색상 계산 (빈 시간 찾기 방식)
+ * count: 일정이 있는 사람 수
+ * @param count 해당 시간에 일정이 있는 사람 수
  * @param totalParticipants 전체 참가자 수
  * @returns Tailwind CSS 클래스
  */
 export function getHeatmapColor(count: number, totalParticipants: number): string {
-  if (count === 0) return 'bg-gray-100';
+  // 아무도 일정 없음 → 빈 시간 (투명, 체크만 표시)
+  if (count === 0) return 'bg-white';
   
   const ratio = count / totalParticipants;
   
-  // 많을수록 어두운 색
-  if (ratio >= 1.0) return 'bg-emerald-700'; // 모두 가능 (어두운 초록)
-  if (ratio >= 0.66) return 'bg-emerald-500'; // 2/3 이상 (중간 초록)
-  if (ratio >= 0.33) return 'bg-emerald-300'; // 1/3 이상 (밝은 초록)
-  return 'bg-emerald-100'; // 소수 (매우 밝은 초록)
+  // 일정 있는 사람이 많을수록 진한 녹색
+  if (ratio >= 1.0) return 'bg-emerald-900'; // 모두 일정 (엄청 진한 녹색)
+  if (ratio >= 0.66) return 'bg-emerald-700'; // 2/3 일정 (진한 녹색)
+  if (ratio >= 0.33) return 'bg-emerald-400'; // 1/3 일정 (연한 녹색)
+  return 'bg-lime-300'; // 소수만 일정 (연두)
 }
 
 /**

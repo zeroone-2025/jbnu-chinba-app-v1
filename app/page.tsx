@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Menu, Copy, Check, Upload, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { Menu, Copy, Check, Upload, ChevronDown, ChevronUp, Clock, Users } from 'lucide-react';
 import IntegratedSidebar from '../components/Sidebar';
 import TimeTable from '../components/TimeTable/TimeTable';
 import DirectTimeInput from '../components/TimeTable/DirectTimeInput';
@@ -17,23 +17,58 @@ const SAMPLE_PARTICIPANTS: Participant[] = [
 ];
 
 const SAMPLE_HEATMAP: HeatmapSlot[] = [
-  // 월요일
-  { dt: '2024-05-20T10:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] },
-  { dt: '2024-05-20T10:30:00', count: 3, members: ['김민수', '이서연', '박지훈'] },
-  { dt: '2024-05-20T14:00:00', count: 2, members: ['김민수', '이서연'] },
-  // 화요일
-  { dt: '2024-05-21T11:00:00', count: 2, members: ['김민수', '박지훈'] },
-  { dt: '2024-05-21T11:30:00', count: 2, members: ['김민수', '박지훈'] },
-  // 수요일
-  { dt: '2024-05-22T15:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] },
-  // 목요일
-  { dt: '2024-05-23T13:00:00', count: 2, members: ['이서연', '박지훈'] },
-  // 금요일
-  { dt: '2024-05-24T16:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] },
-  // 토요일
-  { dt: '2024-05-25T10:00:00', count: 1, members: ['김민수'] },
-  // 일요일
-  { dt: '2024-05-26T14:00:00', count: 2, members: ['이서연', '박지훈'] },
+  // 월요일 - 매우 바쁜 날
+  { dt: '2024-05-20T09:00:00', count: 2, members: ['김민수', '이서연'] }, // 2/3 일정
+  { dt: '2024-05-20T09:30:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-20T10:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-20T10:30:00', count: 2, members: ['김민수', '박지훈'] }, // 2/3 일정
+  { dt: '2024-05-20T11:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-20T11:30:00', count: 2, members: ['이서연', '박지훈'] }, // 2/3 일정
+  { dt: '2024-05-20T13:00:00', count: 1, members: ['김민수'] }, // 소수만 일정
+  { dt: '2024-05-20T13:30:00', count: 0, members: [] }, // 빈 시간 ✓
+  { dt: '2024-05-20T14:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-20T14:30:00', count: 2, members: ['김민수', '이서연'] }, // 2/3 일정
+  { dt: '2024-05-20T15:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  
+  // 화요일 - 바쁜 날
+  { dt: '2024-05-21T09:00:00', count: 2, members: ['이서연', '박지훈'] }, // 2/3 일정
+  { dt: '2024-05-21T09:30:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-21T10:00:00', count: 1, members: ['김민수'] }, // 소수만 일정
+  { dt: '2024-05-21T10:30:00', count: 2, members: ['김민수', '박지훈'] }, // 2/3 일정
+  { dt: '2024-05-21T11:00:00', count: 0, members: [] }, // 빈 시간 ✓
+  { dt: '2024-05-21T13:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-21T14:00:00', count: 2, members: ['김민수', '이서연'] }, // 2/3 일정
+  { dt: '2024-05-21T15:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  
+  // 수요일 - 가장 바쁜 날
+  { dt: '2024-05-22T09:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-22T09:30:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-22T10:00:00', count: 2, members: ['김민수', '박지훈'] }, // 2/3 일정
+  { dt: '2024-05-22T10:30:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-22T11:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-22T13:00:00', count: 2, members: ['이서연', '박지훈'] }, // 2/3 일정
+  { dt: '2024-05-22T14:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-22T15:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-22T16:00:00', count: 1, members: ['김민수'] }, // 소수만 일정
+  
+  // 목요일 - 바쁜 날
+  { dt: '2024-05-23T09:00:00', count: 2, members: ['김민수', '박지훈'] }, // 2/3 일정
+  { dt: '2024-05-23T10:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-23T11:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-23T11:30:00', count: 1, members: ['이서연'] }, // 소수만 일정
+  { dt: '2024-05-23T13:00:00', count: 2, members: ['이서연', '박지훈'] }, // 2/3 일정
+  { dt: '2024-05-23T14:00:00', count: 0, members: [] }, // 빈 시간 ✓
+  { dt: '2024-05-23T14:30:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-23T15:00:00', count: 2, members: ['김민수', '박지훈'] }, // 2/3 일정
+  
+  // 금요일 - 중간 정도
+  { dt: '2024-05-24T09:00:00', count: 1, members: ['김민수'] }, // 소수만 일정
+  { dt: '2024-05-24T10:00:00', count: 2, members: ['김민수', '이서연'] }, // 2/3 일정
+  { dt: '2024-05-24T11:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
+  { dt: '2024-05-24T13:00:00', count: 0, members: [] }, // 빈 시간 ✓
+  { dt: '2024-05-24T14:00:00', count: 2, members: ['이서연', '박지훈'] }, // 2/3 일정
+  { dt: '2024-05-24T15:00:00', count: 1, members: ['박지훈'] }, // 소수만 일정
+  { dt: '2024-05-24T16:00:00', count: 3, members: ['김민수', '이서연', '박지훈'] }, // 모두 일정
 ];
 
 export default function Home() {
@@ -48,6 +83,8 @@ export default function Home() {
   const [hoveredMember, setHoveredMember] = useState<number | null>(null);
   const [selectedSlots, setSelectedSlots] = useState<Set<string>>(new Set());
   const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(['월', '화', '수', '목', '금']);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
   const [copied, setCopied] = useState(false);
   const [inputMode, setInputMode] = useState<'grid' | 'direct'>('grid');
   const [isFreeTimeOpen, setIsFreeTimeOpen] = useState(true);
@@ -87,10 +124,19 @@ export default function Home() {
   };
 
   const handleCreateRoom = () => {
-    // TODO: 방 생성 모달 또는 페이지
+    setShowCreateModal(true);
+  };
+
+  const handleConfirmCreateRoom = () => {
+    if (!newRoomName.trim()) {
+      alert('방 이름을 입력해주세요');
+      return;
+    }
     const newRoomId = `room-${Date.now()}`;
     setCurrentRoomId(newRoomId);
     router.push(`?room=${newRoomId}`);
+    setShowCreateModal(false);
+    setNewRoomName('');
   };
 
   const handleSelectRoom = (roomId: string) => {
@@ -211,12 +257,13 @@ export default function Home() {
                         type="text"
                         value={roomCodeInput}
                         onChange={(e) => setRoomCodeInput(e.target.value)}
-                        placeholder="방 코드를 입력하세요 (예: sample-room)"
-                        className="flex-1 px-4 py-2 rounded-lg bg-white border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                        placeholder={isLoggedIn ? "방 코드를 입력하세요 (예: sample-room)" : "로그인 후 이용 가능"}
+                        disabled={!isLoggedIn}
+                        className="flex-1 px-4 py-2 rounded-lg bg-white border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                       />
                       <button
                         type="submit"
-                        disabled={!roomCodeInput.trim()}
+                        disabled={!isLoggedIn || !roomCodeInput.trim()}
                         className="px-6 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                       >
                         입장
@@ -224,7 +271,8 @@ export default function Home() {
                     </form>
                     <button
                       onClick={handleSaveAvailability}
-                      className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors whitespace-nowrap"
+                      disabled={!isLoggedIn}
+                      className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Upload size={16} />
                       시간표 업로드
@@ -236,7 +284,7 @@ export default function Home() {
 
             {/* 모두 가능한 시간 & 시간표 그리드 */}
             {currentRoomId && (
-              <div className="mb-6">
+              <div className="mb-6 lg:hidden">
                 <button
                   onClick={() => setIsFreeTimeOpen(!isFreeTimeOpen)}
                   className="w-full sm:w-auto flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-colors mb-3"
@@ -301,12 +349,116 @@ export default function Home() {
               </div>
             )}
 
+            {/* 웹: 2열 그리드 레이아웃 (왼쪽: 사이드 패널, 오른쪽: 시간표) */}
+            <div className={currentRoomId ? "grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6" : ""}>
+              {/* 왼쪽 사이드 패널 - 웹에서만 표시 */}
+              {currentRoomId && (
+                <div className="hidden lg:flex lg:flex-col gap-6">
+                  {/* 모두 가능한 시간 */}
+                  <div>
+                    <button
+                      onClick={() => setIsFreeTimeOpen(!isFreeTimeOpen)}
+                      className="w-full flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100 transition-colors mb-3"
+                    >
+                      <Clock size={16} />
+                      <span className="text-sm font-medium">모두 가능한 시간</span>
+                      {isFreeTimeOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+                    
+                    {isFreeTimeOpen && (
+                      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+                        {freeTime.length > 0 ? (
+                          <div className="space-y-2">
+                            {(() => {
+                              const groupedByDay = freeTime.reduce((acc, slot) => {
+                                if (!acc[slot.day]) {
+                                  acc[slot.day] = [];
+                                }
+                                acc[slot.day].push(slot);
+                                return acc;
+                              }, {} as Record<string, typeof freeTime>);
+
+                              const dayOrder = ['월', '화', '수', '목', '금', '토', '일'];
+                              
+                              return dayOrder.map((day) => {
+                                const slots = groupedByDay[day];
+                                if (!slots || slots.length === 0) return null;
+
+                                return (
+                                  <div key={day} className="space-y-1">
+                                    <div className="text-xs font-semibold text-gray-700">{day}</div>
+                                    <div className="flex flex-wrap gap-1">
+                                      {slots.map((slot, idx) => (
+                                        <div
+                                          key={idx}
+                                          className="flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-xs"
+                                        >
+                                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                          <span className="text-emerald-700">
+                                            {slot.startTime}-{slot.endTime}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              }).filter(Boolean);
+                            })()}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400 italic text-center py-2">
+                            모두 가능한 시간이 없습니다
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 참여 멤버 */}
+                  <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+                    <h2 className="text-sm font-medium text-gray-600 mb-3 flex items-center gap-2">
+                      <Users size={16} />
+                      참여 멤버
+                    </h2>
+                    {participants.length > 0 ? (
+                      <div className="space-y-2">
+                        {participants.map((member) => (
+                          <div
+                            key={member.participant_id}
+                            onMouseEnter={() => setHoveredMember(member.participant_id)}
+                            onMouseLeave={() => setHoveredMember(null)}
+                            className={`flex items-center gap-2 p-2 rounded-lg transition-all cursor-pointer ${
+                              hoveredMember === member.participant_id
+                                ? 'bg-blue-50 border border-blue-200'
+                                : 'bg-gray-50 border border-transparent hover:bg-gray-100'
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
+                              {member.name[0]}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium truncate">{member.name}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-xs text-gray-400">
+                        {isLoggedIn ? '참여자가 없습니다' : '로그인하여 참여하세요'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 오른쪽: 시간표 영역 */}
+              <div>
             {/* 시간표 그리드 */}
             <div>
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <h2 className="text-lg font-semibold">
-                    {currentRoomId ? '내 가능 시간 선택' : '시간표 미리보기'}
+                    {currentRoomId ? '내 일정 입력하기' : '내 일정 입력하기'}
                   </h2>
                   
                   {/* 모드 전환 버튼 */}
@@ -337,7 +489,7 @@ export default function Home() {
                 <p className="text-sm text-gray-500">
                   {currentRoomId
                     ? '드래그하여 여러 시간대를 한번에 선택하세요'
-                    : '방 코드를 입력하면 시간을 선택할 수 있습니다'}
+                    : '방 코드를 입력하면 모임 시간을 정할 수 있어요'}
                 </p>
               </div>
 
@@ -350,6 +502,7 @@ export default function Home() {
                   heatmap={heatmap}
                   totalParticipants={participants.length || 1}
                   hoveredMember={hoveredMember ? String(hoveredMember) : null}
+                  showHeatmap={!!currentRoomId}
                   onSelectedDaysChange={setSelectedDays}
                   onSelectedSlotsChange={setSelectedSlots}
                 />
@@ -367,9 +520,66 @@ export default function Home() {
                 />
               )}
             </div>
+              </div>
+            </div>
           </div>
         </main>
       </div>
+
+      {/* 방 생성 모달 */}
+      {showCreateModal && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowCreateModal(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-bold mb-4 text-gray-900">새 방 만들기</h2>
+            <p className="text-sm text-gray-600 mb-6">
+              모임 시간을 조율할 방을 만들어보세요
+            </p>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                방 이름
+              </label>
+              <input
+                type="text"
+                value={newRoomName}
+                onChange={(e) => setNewRoomName(e.target.value)}
+                placeholder="예: 팀 회의 일정 조율"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleConfirmCreateRoom();
+                  }
+                }}
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setNewRoomName('');
+                }}
+                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleConfirmCreateRoom}
+                className="flex-1 px-4 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+              >
+                방 생성하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

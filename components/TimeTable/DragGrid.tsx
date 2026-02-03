@@ -1,5 +1,6 @@
 'use client';
 
+import { Check } from 'lucide-react';
 import { toISOString, getHeatmapColor, formatDateTime } from '../../app/lib/utils';
 import type { DayOfWeek, HeatmapSlot } from '../../app/types';
 
@@ -11,6 +12,8 @@ interface DragGridProps {
   heatmap: HeatmapSlot[];
   totalParticipants: number;
   hoveredMember: string | null;
+  disabled?: boolean;
+  showHeatmap?: boolean;
   onMouseDown: (slot: string) => void;
   onMouseEnter: (slot: string) => void;
   onMouseUp: () => void;
@@ -24,6 +27,8 @@ export default function DragGrid({
   heatmap,
   totalParticipants,
   hoveredMember,
+  disabled = false,
+  showHeatmap = true,
   onMouseDown,
   onMouseEnter,
   onMouseUp,
@@ -42,6 +47,11 @@ export default function DragGrid({
 
   // 히트맵 색상 계산
   const getSlotColor = (date: string, time: string): string => {
+    // 방 입장 전에는 히트맵 없음
+    if (!showHeatmap) {
+      return 'bg-gray-100';
+    }
+
     const isoString = toISOString(date, time);
     const slot = heatmapMap.get(isoString);
 
@@ -58,15 +68,40 @@ export default function DragGrid({
 
   return (
     <div
-      className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm"
-      onMouseUp={onMouseUp}
-      onMouseLeave={onMouseUp}
+      className={`bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm ${disabled ? 'opacity-60' : ''}`}
+      onMouseUp={disabled ? undefined : onMouseUp}
+      onMouseLeave={disabled ? undefined : onMouseUp}
     >
+      {disabled ? (
+        /* 로그인 전 안내 */
+        <div className="flex flex-col items-center justify-center py-20 px-4">
+          <div className="text-center">
+            <div className="text-4xl mb-4">🔒</div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">로그인하여 시간을 선택하세요</h3>
+            <p className="text-sm text-gray-500">
+              로그인 후 시간표를 선택할 수 있습니다
+            </p>
+          </div>
+        </div>
+      ) : filteredDates.length === 0 ? (
+        /* 요일 미선택 시 안내 */
+        <div className="flex flex-col items-center justify-center py-20 px-4">
+          <div className="text-center">
+            <div className="text-4xl mb-4">📅</div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">요일을 선택해 주세요</h3>
+            <p className="text-sm text-gray-500">
+              위의 요일 선택에서 원하는 요일을 선택하면<br />
+              시간표가 표시됩니다
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
       <div className="max-h-[500px] overflow-y-auto">
         <div
           className="grid"
           style={{
-            gridTemplateColumns: `60px repeat(${filteredDates.length}, minmax(80px, 1fr))`,
+            gridTemplateColumns: `60px repeat(${filteredDates.length}, 1fr)`,
           }}
         >
           {/* 요일 헤더 */}
@@ -100,6 +135,8 @@ export default function DragGrid({
                 const isoString = toISOString(date, time);
                 const isSelected = selectedSlots.has(isoString);
                 const heatmapColor = getSlotColor(date, time);
+                const slot = heatmapMap.get(isoString);
+                const isFreeTime = !slot || slot.count === 0;
 
                 return (
                   <div
@@ -107,10 +144,16 @@ export default function DragGrid({
                     onMouseDown={() => onMouseDown(isoString)}
                     onMouseEnter={() => onMouseEnter(isoString)}
                     data-slot={isoString}
-                    className={`h-7 border-l border-b border-gray-100 cursor-pointer transition-colors ${
+                    className={`h-7 border-l border-b border-gray-100 cursor-pointer transition-colors relative ${
                       isSelected ? 'bg-blue-500' : heatmapColor
                     } hover:brightness-95 select-none`}
-                  />
+                  >
+                    {showHeatmap && isFreeTime && !isSelected && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Check className="text-emerald-600" size={14} strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </>
@@ -122,25 +165,37 @@ export default function DragGrid({
       <div className="p-4 border-t border-gray-200 flex flex-wrap items-center gap-4 text-xs text-gray-600">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded bg-blue-500" />
-          <span className="whitespace-nowrap">내 선택</span>
+          <span className="whitespace-nowrap">내 일정</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-emerald-700" />
-          <span className="whitespace-nowrap">모두 가능</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-emerald-500" />
-          <span className="whitespace-nowrap">2/3 이상</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-emerald-300" />
-          <span className="whitespace-nowrap">1/3 이상</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-emerald-100" />
-          <span className="whitespace-nowrap">소수</span>
-        </div>
+        {showHeatmap && (
+          <>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-white border border-gray-300 flex items-center justify-center">
+                <Check className="text-emerald-600" size={10} strokeWidth={3} />
+              </div>
+              <span className="whitespace-nowrap">모두 가능</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-lime-300" />
+              <span className="whitespace-nowrap">소수만 일정</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-emerald-400" />
+              <span className="whitespace-nowrap">1/3 일정</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-emerald-700" />
+              <span className="whitespace-nowrap">2/3 일정</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-emerald-900" />
+              <span className="whitespace-nowrap">모두 일정</span>
+            </div>
+          </>
+        )}
       </div>
+        </>
+      )}
     </div>
   );
 }

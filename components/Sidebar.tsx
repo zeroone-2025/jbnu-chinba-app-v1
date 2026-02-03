@@ -93,32 +93,50 @@ export default function IntegratedSidebar({
               내 방
             </span>
           </div>
-          {SAMPLE_ROOMS.map((room) => (
-            <button
-              key={room.id}
-              onClick={() => onSelectRoom(room.id)}
-              className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg transition-colors text-left ${
-                currentRoomId === room.id
-                  ? 'bg-blue-50 border border-blue-200'
-                  : 'hover:bg-gray-100'
-              }`}
-            >
-              <div className="w-6 h-6 rounded-md bg-gray-200 flex items-center justify-center text-xs">
-                📅
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm truncate font-medium">{room.name}</p>
-                <p className="text-xs text-gray-500">{room.members}명</p>
-              </div>
-            </button>
-          ))}
+          {!isLoggedIn ? (
+            <div className="text-center py-8 px-4">
+              <p className="text-sm text-gray-500">
+                방 리스트 확인은<br />
+                로그인 후 이용가능합니다
+              </p>
+            </div>
+          ) : SAMPLE_ROOMS.length > 0 ? (
+            <>
+              {SAMPLE_ROOMS.map((room) => (
+                <button
+                  key={room.id}
+                  onClick={() => onSelectRoom(room.id)}
+                  className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg transition-colors text-left ${
+                    currentRoomId === room.id
+                      ? 'bg-blue-50 border border-blue-200'
+                      : 'hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="w-6 h-6 rounded-md bg-gray-200 flex items-center justify-center text-xs">
+                    📅
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm truncate font-medium">{room.name}</p>
+                    <p className="text-xs text-gray-500">{room.members}명</p>
+                  </div>
+                </button>
+              ))}
+            </>
+          ) : (
+            <div className="text-center py-8 px-4">
+              <p className="text-sm text-gray-500">
+                참여중인 방(모임)이<br />
+                없습니다
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 현재 방 정보 (방 접속 시에만 표시) */}
         {currentRoomId && (
           <>
-            <div className="border-t border-gray-200 pt-4">
-              {/* 참여 멤버 */}
+            <div className="border-t border-gray-200 pt-4 lg:hidden">
+              {/* 참여 멤버 - 모바일에서만 표시 */}
               <div className="mb-4">
                 <h2 className="text-sm font-medium text-gray-600 mb-3 flex items-center gap-2">
                   <Users size={16} />
