@@ -1,136 +1,196 @@
-## 1. Database Schema
-### 1.1 ERD Overview
-서비스는 Events(방), Participants(참가자), Users(회원), Availabilities(가능 시간) 4개의 핵심 테이블로 구성됩니다.
+## 🚀 주요 기능 (MVP)
 
-핵심 로직: Participants 테이블이 Users와 Events를 연결하며, 비회원일 경우 user_id를 NULL로 처리하여 하이브리드(회원+비회원) 방식을 지원합니다.
+### 1) 🧭 메인 레이아웃 (Single Page)
 
-### 1.2 Table Details
+- **상단(Top Bar)**
+    - 친바 로고
+    - 헤드바 영역(추후 “모이자?” / 예전 친바 기능 확장 고려)
+    - 방 생성 진입(사이드바 첫 메뉴로 고정하고, 우측 메인에 방 생성 화면 표시)
+- **사이드바(노션 느낌 선호)**
+    - 로그인 박스(구글 로그인)
+        - 로그인 후: 내 정보 표시, 참여한 방 표시
+        - 로그아웃 버튼
+    - 방 생성 메뉴
+    - 방 리스트(내가 만든/참여한/최근 본 방)
+- **메인 패널(방 화면 컴포넌트)**
+    - 방 생성 화면 또는 방 상세 화면을 “우측 메인”에 렌더링
 
-| **Table Name** | **Column** | **Type** | **Description** |
-| --- | --- | --- | --- |
-| **Events** | `event_id` | UUID (PK) | URL로 공유될 고유 ID |
-|  | `title` | VARCHAR | 모임 이름 |
-|  | `dates` | JSON/ARRAY | 선택 가능한 날짜들 (예: `['2024-01-01', '2024-01-02']`) |
-|  | `start_hour` | INT | 시작 시간 (예: 9 -> 09:00) |
-|  | `end_hour` | INT | 종료 시간 (예: 22 -> 22:00) |
-|  | `created_at` | DATETIME | 생성일 |
-|  |  |  |  |
-| **Participants** | `participant_id` | INT (PK) | 내부 식별 ID |
-|  | `event_id` | UUID (FK) | 어느 모임의 참가자인지 |
-|  | `user_id` | BIGINT (FK, Nullable) | ⭐ 핵심: 회원이면 ID, 비회원이면 NULL |
-|  | `name` | VARCHAR | 사용자 이름 (화면에 표시) |
-|  | `password` | VARCHAR | (선택) 수정 권한을 위한 간단한 비번 |
-|  |  |  |  |
-| **Users** (신규) | `user_id` | BIGINT (PK) | 회원 고유 ID |
-|  | `email` | VARCHAR | 구글 이메일 (계정 식별용) |
-|  | `provider` | VARCHAR | 'google’ |
-|  | `provider_id` | VARCHAR | 구글에서 주는 고유 ID 값 |
-|  |  |  |  |
-| **Availabilities** | `id` | BIGINT (PK) |  |
-|  | `participant_id` | INT (FK) | 누구의 시간인가 |
-|  | `available_dt` | DATETIME | **가능한 시간 슬롯 (15분/30분 단위의 시작점)** |
+### 2) 🔗 방 상세 화면 (Room View)
 
-## 2. API Documentation
-- Base URL: /api (Router Context: /chinba)
+- **초대 링크 복사 버튼**
+    - 로그인 없이도 방 “열람” 가능 (읽기 전용)
+- **참여 멤버 리스트**
+    - 참여자 목록 표시
+    - 각 멤버별 “일정 변경” 버튼
+        - 시간 선택 UX
+            - 드래그 선택 가능
+            - 드롭다운 선택 가능
+            - 저장
+- **프리 타임(Free Time)**
+    - 멤버 시간표에서 **겹치지 않는/겹치는** 시간을 계산해 표시
+- **시간표 업로드 버튼(추후)**
+    - 버튼 클릭 → 사진 업로드(미래 기능)
+- **타임테이블(Time Table)**
+    - 요일 선택 기능(탭/세그먼트)
+    - 드래그로 블록 선택(when2meet 감성)
 
-### 2.1 이벤트 생성 (Create Event)새로운 일정 조율 방을 생성합니다.
-- Method: POST
-- URL: /api/events
-- Request Body:
-```JSON
-{
-  "title": "알고리즘 스터디 시간 정하기",
-  "dates": ["2024-05-20", "2024-05-21"],
-  "start_hour": 9,
-  "end_hour": 22
-}
-```
-- Response:
-```JSON
-{
-  "event_id": "a1b2-c3d4",
-  "link": "https://chinba/a1b2-c3d4"
-}
-```
+---
 
-### 2.2 이벤트 정보 및 현황 조회 (Get Event & Heatmap)
-방 입장 시 그리드를 그리기 위한 정보와 현재까지 등록된 참가자들의 시간표 현황을 가져옵니다.
-- Method: GET
-- URL: /api/events/{event_id}
-- Response:
-```JSON
-{
-  "title": "알고리즘 스터디",
-  "dates": ["2024-05-20", "2024-05-21"],
-  "time_range": { "start": 9, "end": 22 },
-  "participants": [
-    { "id": 1, "name": "철수" },
-    { "id": 2, "name": "영희" }
-  ],
-  "heatmap": [
-    // 해당 시간에 가능한 사람 수 및 명단 (프론트에서 색상 농도 계산)
-    {
-      "dt": "2024-05-20T10:00:00",
-      "count": 2,
-      "members": ["철수", "영희"]
-    },
-    {
-      "dt": "2024-05-20T10:15:00",
-      "count": 1,
-      "members": ["철수"]
-    }
-  ]
-}
+## 🛠 기술 스택 (Tech Stack)
+
+- **Framework**: Next.js (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **UI Components**: Shadcn UI (@radix-ui)
+- **Icons**: Lucide React
+- **State**: React Hooks + (필요시) Zustand/React Query 도입 가능
+- **Date/Time**: date-fns 또는 dayjs (KST/타임존 고려)
+- **Auth**: Google OAuth (프론트는 버튼/리다이렉트 및 세션 UI 담당)
+
+---
+
+## 🏁 시작하기 (Getting Started)
+
+### 1) 설치
+
+```bash
+npm install
+# or
+yarn
+
 ```
 
-### 2.3 참가자 등록/로그인 (Join Event)방에 이름을 등록하고 참여합니다.
-- Guest: 이름/비번 입력.
-- User: 헤더에 토큰이 있을 경우, 백엔드에서 user_id를 찾아 매핑.
-- Method: POST
-- URL: /api/events/{event_id}/participants
-- Request Body:
-```JSON
-{
-  "name": "길동",
-  "password": "1234" // 선택사항 (비회원일 경우 권장)
-}
+### 2) 환경 변수 (.env.local)
+
+```
+# 백엔드 API 주소 (예: FastAPI)
+NEXT_PUBLIC_API_URL=http://localhost:8000
+
+# Google OAuth
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+NEXT_PUBLIC_GOOGLE_REDIRECT_URI=http://localhost:3000/auth/callback
+
+# 배포 시 프론트 도메인 (초대 링크 생성에 사용)
+NEXT_PUBLIC_APP_ORIGIN=http://localhost:3000
+
 ```
 
-Response:
-```JSON
-{
-  "participant_id": 3,
-  "token": "eyJhbGciOiJIUzI1..." // 추후 수정 요청 시 식별용 토큰
-}
+### 3) 실행
+
+```bash
+npm run dev
+
 ```
 
-### 2.4 내 시간 등록/수정 (Update Availability)
-그리드에서 드래그가 끝났을 때(onMouseUp) 또는 '저장' 버튼 클릭 시 호출합니다.
-- Method: PUT (또는 POST)
-- URL: /api/participants/{participant_id}/availabilityLogic: 해당 participant_id의 기존 데이터를 Delete하고, 요청받은 슬롯들을 Bulk Insert 합니다.
-- Request Body:
-```JSON
-{
-  // 내가 선택한(가능한) 모든 시간 슬롯의 배열
-  "slots": [
-    "2024-05-20T10:00:00",
-    "2024-05-20T10:15:00",
-    "2024-05-20T14:00:00"
-  ]
-}
+- [http://localhost:3000](http://localhost:3000/)
+
+---
+
+## 🧱 화면 구성 (Information Architecture)
+
+> “라우팅은 최소화하되, 화면은 한 페이지에서 패널 전환으로 처리”
+> 
+- `/` : 단일 페이지
+    - 좌측: Sidebar
+    - 우측: Main Panel
+        - 기본: 방 생성 패널
+        - URL에 roomId가 있으면: 방 상세 패널
+- `/auth/callback` : 구글 로그인 콜백 처리(토큰/세션 수립 후 `/`로 복귀)
+
+---
+
+## 📂 프로젝트 구조 (예시)
+
 ```
-- Response: 200 OK
+chinba-when2meet/
+├── app/
+│   ├── layout.tsx
+│   ├── page.tsx# 단일 페이지(사이드바+메인패널)
+│   ├── auth/
+│   │   └── callback/page.tsx# OAuth 콜백 처리
+│   └── (components)/
+│       ├── TopBar.tsx
+│       ├── Sidebar.tsx
+│       ├── MainPanel.tsx
+│       ├── RoomCreatePanel.tsx
+│       ├── RoomViewPanel.tsx
+│       ├── MemberList.tsx
+│       ├── FreeTimePanel.tsx
+│       ├── TimeTable/
+│       │   ├── TimeTable.tsx
+│       │   ├── DaySelector.tsx
+│       │   ├── DragGrid.tsx
+│       │   └── TimeDropdown.tsx
+│       └── InviteLinkButton.tsx
+├── components/
+│   └── ui/# shadcn/ui
+├── lib/
+│   ├── api.ts# API client (fetch/axios)
+│   ├── auth.ts# 세션/로그인 유틸
+│   ├── time.ts# 시간표 변환/유틸(분 단위, 요일 등)
+│   ├── constants.ts
+│   └── utils.ts
+└── public/
 
-### 2.5 시간표 이미지 업로드 (Upload Timetable) 아직 구체화 미흡. 추후 개발 예정
-<!-- 에브리타임 등의 시간표 이미지를 업로드하면 AI가 분석하여 자동으로 가능한 시간을 계산해 반영합니다.
-- Method: POST
-- URL: /api/events/{event_id}/participants/me/upload-timetableRequest - Header: Content-Type: multipart/form-data
-- Request Body:file: (Binary Image File)
-- Process Logic:
- - Image Analysis: OCR/Vision API를 통해 이미지에서 수업(불가능한) 시간 추출 (예: 월 10:00~12:00).
- - Reset: 해당 유저의 기존 Availabilities 데이터 초기화.
- - Calculation: (방 전체 시간 범위 - 추출된 수업 시간) = 가능한 시간 도출.
- - Save: 계산된 가능한 시간 슬롯을 Availabilities 테이블에 저장
-- Response: 200 OK (성공 시 새로고침된 그리드 데이터 반환) -->
+```
 
+---
 
+## 🔐 인증/권한 UX 정책
+
+- **로그인 없이 가능**
+    - 방 링크로 입장
+    - 방 화면(타임테이블, 멤버 목록, 프리타임) **읽기 전용**으로 보기
+    - 초대 링크 복사
+- **로그인 필요**
+    - “내 일정 선택/저장”
+    - 내 참여 방 리스트/내 정보 표시
+
+> 구현 팁: UI는 isLoggedIn 상태에 따라
+> 
+- 버튼을 disabled 처리 + “로그인 필요” 안내
+- 혹은 클릭 시 로그인 모달/리다이렉트 유도
+
+---
+
+## 🧠 핵심 데이터 모델 (프론트 관점)
+
+- **Room**
+    - id, title, timezone(KST 기본), createdAt
+- **Member**
+    - id, name, avatar(optional)
+- **Availability**
+    - memberId, dayOfWeek, blocks(선택된 시간 블록들)
+- **FreeTime**
+    - dayOfWeek, blocks(교집합/합집합 등 정책에 따라)
+
+---
+
+## 🧩 타임테이블 UX 스펙 (when2meet 느낌)
+
+- 시간 단위: 30분(또는 15분) 그리드
+- 드래그 동작:
+    - drag start → drag move → drag end
+    - “선택” / “해제” 모드 결정(첫 셀 상태 기준)
+- 요일 선택:
+    - Tabs/Segmented Control로 요일 전환
+- 저장:
+    - 로컬 UI 즉시 반영(Optimistic) → API 저장 → 실패 시 롤백
+
+---
+
+## 🗺️ 로드맵 (Future)
+
+- [ ]  시간표 이미지 업로드 → OCR/파싱(추후)
+- [ ]  익명 참여(로그인 없이도 닉네임으로 참여) 옵션
+- [ ]  멤버별 색상/가시성 토글
+- [ ]  결과 공유(“이 시간대가 베스트” 카드 생성)
+- [ ]  모바일 드래그 UX 최적화(스크롤/드래그 충돌 해결)
+
+---
+
+## ✅ 개발 컨벤션 (권장)
+
+- 컴포넌트는 “작게 쪼개기”
+- `lib/time.ts`에 시간표 변환 로직(요일/인덱스/블록 계산)을 몰아넣고 UI는 최대한 얇게
+- API는 `lib/api.ts`에 통합하고 타입은 `types.ts`로 분리(원하면 추가)
