@@ -3,14 +3,14 @@
 import { useState, useCallback } from 'react';
 import DaySelector from './DaySelector';
 import DragGrid from './DragGrid';
-import type { DayOfWeek, HeatmapSlot } from '@/app/types';
+import type { DayOfWeek, ChinbaHeatmap } from '@/app/types';
 
 interface TimeTableProps {
   dates: string[];
   selectedDays: DayOfWeek[];
   timeSlots: string[];
   selectedSlots: Set<string>;
-  heatmap: HeatmapSlot[];
+  heatmap: ChinbaHeatmap;
   totalParticipants: number;
   hoveredMember: string | null;
   disabled?: boolean;

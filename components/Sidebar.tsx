@@ -1,30 +1,41 @@
 'use client';
 
-import { useState } from 'react';
-import { Users, Clock, Plus } from 'lucide-react';
-import type { Participant, FreeTimeSlot } from '../app/types';
+import { Users, Plus, Trash2 } from 'lucide-react';
+import type { ChinbaParticipant, FreeTimeSlot } from '../app/types';
+import { API_BASE_URL } from '../app/lib/constants';
+
+interface RoomInfo {
+  id: string;
+  name: string;
+  members: number;
+  isCreator: boolean;
+}
+
+interface UserInfo {
+  email: string;
+  nickname?: string;
+  profile_image?: string;
+}
 
 interface IntegratedSidebarProps {
   isLoggedIn: boolean;
-  onLoginToggle: () => void;
+  userInfo: UserInfo | null;
+  onLogout: () => void;
   currentRoomId: string | null;
-  participants: Participant[];
+  participants: ChinbaParticipant[];
   freeTime: FreeTimeSlot[];
   hoveredMember: number | null;
   onMemberHover: (id: number | null) => void;
   onCreateRoom: () => void;
   onSelectRoom: (roomId: string) => void;
+  onDeleteRoom: (roomId: string, e: React.MouseEvent) => void;
+  rooms?: RoomInfo[];
 }
-
-// 샘플 방 데이터
-const SAMPLE_ROOMS = [
-  { id: 'sample-room', name: '2월 스터디 모임', members: 3 },
-  { id: 'room-2', name: '프로젝트 킥오프', members: 5 },
-];
 
 export default function IntegratedSidebar({
   isLoggedIn,
-  onLoginToggle,
+  userInfo,
+  onLogout,
   currentRoomId,
   participants,
   freeTime,
@@ -32,7 +43,18 @@ export default function IntegratedSidebar({
   onMemberHover,
   onCreateRoom,
   onSelectRoom,
+  onDeleteRoom,
+  rooms,
 }: IntegratedSidebarProps) {
+
+  const handleGoogleLogin = () => {
+    // 백엔드 서버사이드 OAuth flow로 리다이렉트
+    window.location.href = `${API_BASE_URL}/auth/google/login?platform=web`;
+  };
+
+  const displayName = userInfo?.nickname || userInfo?.email?.split('@')[0] || '사용자';
+  const initial = displayName[0].toUpperCase();
+
   return (
     <aside className="w-64 h-full border-r border-gray-200 bg-white flex flex-col overflow-hidden shadow-xl">
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
@@ -44,7 +66,7 @@ export default function IntegratedSidebar({
                 로그인하고 내 일정을 관리하세요
               </p>
               <button
-                onClick={onLoginToggle}
+                onClick={handleGoogleLogin}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-white text-gray-900 text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24">
@@ -59,16 +81,24 @@ export default function IntegratedSidebar({
           ) : (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-medium">
-                  김
-                </div>
+                {userInfo?.profile_image ? (
+                  <img
+                    src={userInfo.profile_image}
+                    alt={displayName}
+                    className="w-10 h-10 rounded-full"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-medium">
+                    {initial}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">김민수</p>
-                  <p className="text-xs text-gray-500 truncate">minsu@gmail.com</p>
+                  <p className="text-sm font-medium truncate">{displayName}</p>
+                  <p className="text-xs text-gray-500 truncate">{userInfo?.email}</p>
                 </div>
               </div>
               <button
-                onClick={onLoginToggle}
+                onClick={onLogout}
                 className="w-full py-1.5 rounded-md text-xs text-gray-600 hover:text-gray-800 hover:bg-gray-100 transition-colors"
               >
                 로그아웃
@@ -100,17 +130,16 @@ export default function IntegratedSidebar({
                 로그인 후 이용가능합니다
               </p>
             </div>
-          ) : SAMPLE_ROOMS.length > 0 ? (
+          ) : rooms && rooms.length > 0 ? (
             <>
-              {SAMPLE_ROOMS.map((room) => (
+              {rooms.map((room: RoomInfo) => (
                 <button
                   key={room.id}
                   onClick={() => onSelectRoom(room.id)}
-                  className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg transition-colors text-left ${
-                    currentRoomId === room.id
-                      ? 'bg-blue-50 border border-blue-200'
-                      : 'hover:bg-gray-100'
-                  }`}
+                  className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg transition-colors text-left ${currentRoomId === room.id
+                    ? 'bg-blue-50 border border-blue-200'
+                    : 'hover:bg-gray-100'
+                    }`}
                 >
                   <div className="w-6 h-6 rounded-md bg-gray-200 flex items-center justify-center text-xs">
                     📅
@@ -119,6 +148,21 @@ export default function IntegratedSidebar({
                     <p className="text-sm truncate font-medium">{room.name}</p>
                     <p className="text-xs text-gray-500">{room.members}명</p>
                   </div>
+                  {room.isCreator ? (
+                    <div
+                      onClick={(e) => onDeleteRoom(room.id, e)}
+                      className="p-1.5 rounded-md text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
+                    >
+                      <Trash2 size={14} />
+                    </div>
+                  ) : (
+                    <div
+                      onClick={(e) => onDeleteRoom(room.id, e)}
+                      className="px-2 py-1 rounded-md text-xs font-medium text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer whitespace-nowrap"
+                    >
+                      나가기
+                    </div>
+                  )}
                 </button>
               ))}
             </>
@@ -146,14 +190,13 @@ export default function IntegratedSidebar({
                   <div className="space-y-2">
                     {participants.map((member) => (
                       <div
-                        key={member.participant_id}
-                        onMouseEnter={() => onMemberHover(member.participant_id)}
+                        key={member.user_id}
+                        onMouseEnter={() => onMemberHover(member.user_id)}
                         onMouseLeave={() => onMemberHover(null)}
-                        className={`flex items-center gap-3 p-2.5 rounded-xl transition-all cursor-pointer ${
-                          hoveredMember === member.participant_id
-                            ? 'bg-blue-50 border border-blue-200'
-                            : 'bg-gray-50 border border-transparent hover:bg-gray-100'
-                        }`}
+                        className={`flex items-center gap-3 p-2.5 rounded-xl transition-all cursor-pointer ${hoveredMember === member.user_id
+                          ? 'bg-blue-50 border border-blue-200'
+                          : 'bg-gray-50 border border-transparent hover:bg-gray-100'
+                          }`}
                       >
                         <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-medium">
                           {member.name[0]}
